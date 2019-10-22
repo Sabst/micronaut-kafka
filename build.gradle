@@ -53,6 +53,8 @@ subprojects { Project subproject ->
     
     apply plugin:"groovy"
     apply plugin:"java"
+    apply plugin:"com.github.johnrengelman.shadow"
+    apply plugin:"maven"
 
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
@@ -65,6 +67,31 @@ subprojects { Project subproject ->
             attributes('Implementation-Version': projectVersion)
             attributes('Implementation-Title': title)
         }
+    }
+
+    def confGroup = "${group}"
+    shadowJar.enabled = true
+
+    configurations {
+        mavenLocalUtilsJar
+    }
+    uploadMavenLocalUtilsJar {
+        dependsOn jar
+        repositories {
+            mavenDeployer {
+                def url = mavenLocal().url
+                repository(url: url)
+                pom.version = "${version}"
+                pom.artifactId = "micronaut-${subproject.name}"
+                pom.groupId = "${confGroup}"
+                println "Maven local URL is ${url}${pom.groupId}/${pom.artifactId}"
+            }
+        }
+    }
+    artifacts {
+        def file = file("build/libs/${subproject.name}-${version}.jar")
+        println "Publishing ${file} to local Maven"
+        mavenLocalUtilsJar file: file
     }
 
     bintray.publish = true
